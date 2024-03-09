@@ -17,9 +17,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,14 +32,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.observeOn
+import kotlinx.coroutines.launch
 
 @Preview
 @Composable
-fun RegistrationScreen() {
-    var nameTextValue by remember { mutableStateOf("") }
-    var loginTextValue by remember { mutableStateOf("") }
-    var passwordTextValue by remember { mutableStateOf("") }
-    var passwordRepeatTextValue by remember { mutableStateOf("") }
+fun RegistrationScreen(viewModel: RegistrationViewModel = viewModel()) {
+    val nameState by viewModel.nameText.collectAsState("")
+    val phoneState by viewModel.phoneText.collectAsState("")
+    val passwordState by viewModel.passwordText.collectAsState("")
+    val passwordRepeatState by viewModel.passwordRepeatText.collectAsState("")
+    val coroutineScope = rememberCoroutineScope()
+
     val brush = remember {
         Brush.linearGradient(
             colors = listOf(Color.Green, Color.Gray, Color.Blue)
@@ -90,20 +97,19 @@ fun RegistrationScreen() {
                 )
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    value = nameTextValue,
-                    onValueChange = { nameTextValue = it },
+                    value = nameState,
+                    onValueChange = { viewModel.onNameChange(it) },
                     textStyle = TextStyle(brush = brush),
-                    visualTransformation = PasswordVisualTransformation()
                 )
 
                 Text(
                     modifier = Modifier.align(Alignment.Start),
-                    text = "Почта"
+                    text = "Телефон"
                 )
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    value = loginTextValue,
-                    onValueChange = { loginTextValue = it },
+                    value = phoneState,
+                    onValueChange = { viewModel.onPhoneChange(it) },
                     textStyle = TextStyle(brush = brush)
                 )
 
@@ -113,8 +119,8 @@ fun RegistrationScreen() {
                 )
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    value = passwordTextValue,
-                    onValueChange = { passwordTextValue = it },
+                    value = passwordState,
+                    onValueChange = { viewModel.onPasswordChange(it) },
                     textStyle = TextStyle(brush = brush),
                     visualTransformation = PasswordVisualTransformation()
                 )
@@ -125,15 +131,19 @@ fun RegistrationScreen() {
                 )
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    value = passwordRepeatTextValue,
-                    onValueChange = { passwordRepeatTextValue = it },
+                    value = passwordRepeatState,
+                    onValueChange = { viewModel.onPasswordRepeatChange(it) },
                     textStyle = TextStyle(brush = brush),
                     visualTransformation = PasswordVisualTransformation()
                 )
 
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { /*TODO*/ }
+                    onClick = {
+                        coroutineScope.launch {
+                            viewModel.onRegistrationClick()
+                        }
+                    }
                 ) {
                     Text(text = "Войти")
                 }
