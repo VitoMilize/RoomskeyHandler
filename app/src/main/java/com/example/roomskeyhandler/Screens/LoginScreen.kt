@@ -1,4 +1,4 @@
-package com.example.roomskeyhandler
+package com.example.roomskeyhandler.Screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,12 +19,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -33,14 +31,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
+import com.example.roomskeyhandler.GeneralViewModel
+import com.example.roomskeyhandler.R
 
 @Preview
 @Composable
-fun LoginScreen(viewModel: LoginViewModel = viewModel()) {
-    val phoneState by viewModel.phoneText.collectAsState("")
-    val passwordState by viewModel.passwordText.collectAsState("")
-    val coroutineScope = rememberCoroutineScope()
+fun LoginScreen(viewModel: GeneralViewModel = viewModel()) {
+    val phoneState by viewModel.phoneLogin.collectAsState("")
+    val passwordState by viewModel.passwordLogin.collectAsState("")
+    val loginResponseState by viewModel.loginResponse.collectAsState()
+    val loginResponseErrorState by viewModel.loginResponseError.collectAsState()
 
     val brush = remember {
         Brush.linearGradient(
@@ -91,9 +91,13 @@ fun LoginScreen(viewModel: LoginViewModel = viewModel()) {
                     text = "Телефон"
                 )
                 OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            viewModel.clearLoginResponseErrorState()
+                        }
+                    },
                     value = phoneState,
-                    onValueChange = { viewModel.onPhoneChange(it) },
+                    onValueChange = { viewModel.setPhoneLogin(it) },
                     textStyle = TextStyle(brush = brush)
                 )
                 Text(
@@ -101,19 +105,28 @@ fun LoginScreen(viewModel: LoginViewModel = viewModel()) {
                     text = "Пароль"
                 )
                 OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            viewModel.clearLoginResponseErrorState()
+                        }
+                    },
                     value = passwordState,
-                    onValueChange = { viewModel.onPasswordChange(it) },
+                    onValueChange = { viewModel.setPasswordLogin(it) },
                     textStyle = TextStyle(brush = brush),
                     visualTransformation = PasswordVisualTransformation()
                 )
 
+                if (loginResponseErrorState != null) {
+                    Text(
+                        text = "Ошибка входа",
+                        color = Color.Red
+                    )
+                }
+
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        coroutineScope.launch {
-                            viewModel.onLoginClick()
-                        }
+                        viewModel.onLoginClick()
                     }
                 ) {
                     Text(text = "Войти")

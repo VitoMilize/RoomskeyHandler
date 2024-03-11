@@ -1,4 +1,4 @@
-package com.example.roomskeyhandler
+package com.example.roomskeyhandler.Screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,10 +22,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,7 +32,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import com.example.roomskeyhandler.GeneralViewModel
 import com.example.roomskeyhandler.ui.theme.GrayForFields
 import com.example.roomskeyhandler.ui.theme.LightBlue
 import com.example.roomskeyhandler.ui.theme.Sea
@@ -42,11 +42,11 @@ import com.example.roomskeyhandler.ui.theme.interFamily
 
 @Preview
 @Composable
-fun ProfileScreen() {
-    var nameValue by remember { mutableStateOf("Джон") }
-    var phoneValue by remember { mutableStateOf("89999999999") }
-    var emailValue by remember { mutableStateOf("test@test.test") }
-    var avatarValue by remember { mutableStateOf("https://marketplace.canva.com/EAEjui-SkE4/2/0/1600w/canva-%D1%80%D0%BE%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9-%D0%B8-%D0%B6%D0%B5%D0%BB%D1%82%D1%8B%D0%B9-%D0%BA%D0%BE%D1%88%D0%BA%D0%B0-%D1%81%D0%BE%D0%B2%D1%80%D0%B5%D0%BC%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9-%D0%BD%D0%B0%D1%80%D0%B8%D1%81%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9-%D0%BE%D1%82-%D1%80%D1%83%D0%BA%D0%B8-%D0%B0%D0%B1%D1%81%D1%82%D1%80%D0%B0%D0%BA%D1%82%D0%BD%D0%BE%D0%B5-%D0%B8%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B4%D0%BB%D1%8F-%D0%BF%D1%80%D0%BE%D1%84%D0%B8%D0%BB%D1%8F-%D0%B2-twitch-WsQ560IKaR0.jpg") }
+fun ProfileScreen(viewModel: GeneralViewModel = viewModel()) {
+    val nameState by viewModel.nameProfile.collectAsState("")
+    val phoneState by viewModel.phoneProfile.collectAsState("")
+    val emailState by viewModel.emailProfile.collectAsState("")
+    val avatarLinkState by viewModel.avatarLinkProfile.collectAsState("")
 
     Box(
         modifier = Modifier
@@ -66,7 +66,7 @@ fun ProfileScreen() {
                     .size(170.dp)
                     .clip(CircleShape)
                     .border(1.dp, Color.Black, CircleShape),
-                painter = rememberAsyncImagePainter(avatarValue),
+                painter = rememberAsyncImagePainter(avatarLinkState),
                 contentDescription = null
             )
 
@@ -85,14 +85,13 @@ fun ProfileScreen() {
                     .align(Alignment.TopCenter)
                     .padding(top = 260.dp)
                     .clickable {
-
+                        viewModel.onLogoutClick()
                     },
                 text = "Выйти из аккаунта",
                 fontSize = 15.sp,
                 fontFamily = interFamily,
                 fontWeight = FontWeight.Normal,
                 color = LightBlue
-
             )
 
             Column(modifier = Modifier
@@ -115,8 +114,8 @@ fun ProfileScreen() {
                             focusedBorderColor = GrayForFields,
                             unfocusedBorderColor = GrayForFields,
                         ),
-                        value = nameValue,
-                        onValueChange = { nameValue = it },
+                        value = nameState,
+                        onValueChange = { viewModel.setNameProfile(it) },
                         maxLines = 1
                     )
                 }
@@ -136,8 +135,8 @@ fun ProfileScreen() {
                             focusedBorderColor = GrayForFields,
                             unfocusedBorderColor = GrayForFields,
                         ),
-                        value = phoneValue,
-                        onValueChange = { phoneValue = it },
+                        value = phoneState,
+                        onValueChange = { viewModel.setPhoneProfile(it) },
                         maxLines = 1
                     )
                 }
@@ -157,8 +156,8 @@ fun ProfileScreen() {
                             focusedBorderColor = GrayForFields,
                             unfocusedBorderColor = GrayForFields,
                         ),
-                        value = emailValue,
-                        onValueChange = { emailValue = it },
+                        value = emailState,
+                        onValueChange = { viewModel.setEmailProfile(it) },
                         maxLines = 1
                     )
                 }
@@ -178,8 +177,8 @@ fun ProfileScreen() {
                             focusedBorderColor = GrayForFields,
                             unfocusedBorderColor = GrayForFields,
                         ),
-                        value = avatarValue,
-                        onValueChange = { avatarValue = it },
+                        value = avatarLinkState,
+                        onValueChange = { viewModel.setAvatarLinkProfile(it) },
                         maxLines = 1
                     )
                 }
@@ -190,7 +189,9 @@ fun ProfileScreen() {
                     Button(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor  = Sea),
-                        onClick = { /*TODO*/ }
+                        onClick = {
+                           viewModel.onSaveProfileClick()
+                        }
                     ) {
                         Text(
                             text = "Сохранить",
@@ -202,7 +203,9 @@ fun ProfileScreen() {
                     Button(
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor  = Sea),
-                        onClick = { /*TODO*/ }
+                        onClick = {
+                            viewModel.onDeclineChangesClick()
+                        }
                     ) {
                         Text(
                             text = "Отмена",
