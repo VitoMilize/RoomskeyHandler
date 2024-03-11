@@ -58,7 +58,7 @@ fun KeyItem(key: Key, userForKey: User?, viewModel: GeneralViewModel) {
             colors = ButtonDefaults.buttonColors(containerColor = Sea),
             onClick = {
                 if (userForKey != null) {
-                    viewModel.onGiveKey(userForKey.id, key.id, viewModel.userForKey)
+                    viewModel.onGiveKey(userForKey.id, key.id)
                 }
             }
         ) {

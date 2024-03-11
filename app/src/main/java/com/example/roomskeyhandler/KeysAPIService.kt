@@ -12,6 +12,7 @@ import com.example.roomskeyhandler.models.LogoutResponse
 import com.example.roomskeyhandler.models.ProfileResponse
 import com.example.roomskeyhandler.models.RegistrationRequest
 import com.example.roomskeyhandler.models.RegistrationResponse
+import com.example.roomskeyhandler.models.ScheduleBlockResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -19,7 +20,6 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface KeysAPIService {
@@ -42,8 +42,11 @@ interface KeysAPIService {
     suspend fun getMyKeys(@Header("Authorization") token: String, @Query("size") size: Int): Response<GetMyKeysResponse>
 
     @POST("api/giveKey")
-    suspend fun giveKey(@Header("Authorization") token: String, @Path("id") id: Int, @Body giveKeyRequest: GiveKeyRequest): Response<GiveKeyResponse>
+    suspend fun giveKey(@Header("Authorization") token: String, @Query("id") id: Int, @Body giveKeyRequest: GiveKeyRequest): Response<GiveKeyResponse>
 
     @GET("api/user")
     suspend fun getUsers(@Header("Authorization") token: String, @Query("size") size: Int): Response<GetUsersResponse>
+
+    @GET("api/bid/forVitya")
+    suspend fun getScheduleBlock(@Header("Authorization") token: String, @Query("time") time: String, @Query("date") date: String): Response<ScheduleBlockResponse>
 }

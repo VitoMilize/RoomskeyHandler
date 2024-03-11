@@ -4,32 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.ViewModelProvider
+import com.example.roomskeyhandler.Screens.LoginScreen
 import com.example.roomskeyhandler.Screens.MainScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val tokenStore = TokenStore(applicationContext)
         val generalViewModel = ViewModelProvider(this, MyViewModelFactory(tokenStore))[GeneralViewModel::class.java]
-        CoroutineScope(Dispatchers.IO).launch {
-            if (tokenStore.getToken() != null) {
-                generalViewModel.getProfile()
-                generalViewModel.getMyKeys()
-                generalViewModel.getUsers()
-            }
+        if (tokenStore.getToken() != null) {
+            generalViewModel.getProfile()
+            generalViewModel.getMyKeys()
+            generalViewModel.getUsers()
         }
         setContent {
-            val generalViewModel = ViewModelProvider(this, MyViewModelFactory(tokenStore))[GeneralViewModel::class.java]
             if (tokenStore.getToken() != null) {
-                MainScreen()
+                MainScreen(generalViewModel)
 //                ProfileScreen(generalViewModel)
             } else {
-                MainScreen()
-//                RegistrationScreen(generalViewModel)
-//                LoginScreen(generalViewModel)
+                LoginScreen(generalViewModel)
             }
 
 //            RegistrationScreen(registrationViewModel)

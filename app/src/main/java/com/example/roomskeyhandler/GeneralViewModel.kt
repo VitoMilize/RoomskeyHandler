@@ -11,13 +11,14 @@ import com.example.roomskeyhandler.models.LoginResponse
 import com.example.roomskeyhandler.models.ProfileResponse
 import com.example.roomskeyhandler.models.RegistrationRequest
 import com.example.roomskeyhandler.models.RegistrationResponse
+import com.example.roomskeyhandler.models.ScheduleBlock
 import com.example.roomskeyhandler.models.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class GeneralViewModel(private val tokenStore: TokenStore): ViewModel() {
     private val _nameRegistration = MutableStateFlow("")
@@ -60,7 +61,33 @@ class GeneralViewModel(private val tokenStore: TokenStore): ViewModel() {
     val userForKey = _userForKey.asStateFlow()
     private val _expanded = MutableStateFlow(false)
     val expanded = _expanded.asStateFlow()
+    private val _schedule = MutableStateFlow(generateMatrix(30, 7))
+    val schedule = _schedule.asStateFlow()
+    private val _scheduleBlock = MutableStateFlow<List<ScheduleBlock>>(emptyList())
+    val scheduleBlock = _scheduleBlock.asStateFlow()
+    private val _date = MutableStateFlow("")
+    val date = _date.asStateFlow()
+    private val _time = MutableStateFlow("")
+    val time = _time.asStateFlow()
 
+    private fun generateMatrix(rows: Int, columns: Int): MutableList<MutableList<MutableList<Int>>> {
+        val matrix = mutableListOf<MutableList<MutableList<Int>>>()
+        for (i in 0 until rows) {
+            val row = mutableListOf<MutableList<Int>>()
+            for (j in 0 until columns) {
+                row.add(mutableListOf())
+            }
+            matrix.add(row)
+        }
+        return matrix
+    }
+
+    fun setDate(text: String) {
+        _date.value = text
+    }
+    fun setTime(text: String) {
+        _time.value = text
+    }
 
     fun setPhoneLogin(text: String) {
         _phoneLogin.value = text
@@ -123,8 +150,8 @@ class GeneralViewModel(private val tokenStore: TokenStore): ViewModel() {
         logout()
     }
 
-    fun onGiveKey(userId: Int, keyId: Int, userForKey: StateFlow<User?>) {
-        giveKey(keyId, userId)
+    fun onGiveKey(userId: Int, keyId: Int) {
+        giveKey(userId, keyId)
     }
 
     fun onSaveProfileClick() {
@@ -161,19 +188,21 @@ class GeneralViewModel(private val tokenStore: TokenStore): ViewModel() {
     private fun logout() {
         CoroutineScope(Dispatchers.IO).launch {
             val response = RetrofitClient.keysAPIService.logout("Bearer ${tokenStore.getToken()}")
-            when(response.code()) {
-                200 -> {
-                    tokenStore.clearToken()
-                    Log.e("CHECK", tokenStore.getToken().toString())
-                }
-                400 ->{
-                    Log.e("ERROR", "400")
-                }
-                401 ->{
-                    Log.e("ERROR", "401")
-                }
-                403 ->{
-                    Log.e("ERROR", "403")
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+                        tokenStore.clearToken()
+                        Log.e("CHECK", tokenStore.getToken().toString())
+                    }
+                    400 ->{
+                        Log.e("ERROR", "400")
+                    }
+                    401 ->{
+                        Log.e("ERROR", "401")
+                    }
+                    403 ->{
+                        Log.e("ERROR", "403")
+                    }
                 }
             }
         }
@@ -182,56 +211,64 @@ class GeneralViewModel(private val tokenStore: TokenStore): ViewModel() {
     fun getProfile() {
         CoroutineScope(Dispatchers.IO).launch {
             val response = RetrofitClient.keysAPIService.getProfile("Bearer ${tokenStore.getToken()}")
-            when(response.code()) {
-                200 -> {
-                    _profileResponse.value = response.body()
-                    _nameProfile.value = _profileResponse.value!!.name
-                    _phoneProfile.value = _profileResponse.value!!.phone
-                    if (_profileResponse.value?.email == null) _emailProfile.value = "" else _profileResponse.value!!.email
-                    if (_profileResponse.value?.avatarLink == null) _avatarLinkProfile.value = "" else _profileResponse.value!!.avatarLink
-                }
-                400 ->{
-                    Log.e("ERROR", "400")
-                }
-                401 ->{
-                    Log.e("ERROR", "401")
-                }
-                403 ->{
-                    Log.e("ERROR", "403")
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+                        _profileResponse.value = response.body()
+                        _nameProfile.value = _profileResponse.value!!.name
+                        _phoneProfile.value = _profileResponse.value!!.phone
+                        if (_profileResponse.value?.email == null) _emailProfile.value = ""
+                        else _emailProfile.value = _profileResponse.value!!.email.toString()
+                        if (_profileResponse.value?.avatarLink == null) _avatarLinkProfile.value = ""
+                        else _avatarLinkProfile.value = _profileResponse.value!!.avatarLink.toString()
+                    }
+                    400 ->{
+                        Log.e("ERROR", "400")
+                    }
+                    401 ->{
+                        Log.e("ERROR", "401")
+                    }
+                    403 ->{
+                        Log.e("ERROR", "403")
+                    }
                 }
             }
         }
     }
 
     private fun registration(registrationRequest: RegistrationRequest) {
-        getMyKeys()
         CoroutineScope(Dispatchers.IO).launch {
             val response = RetrofitClient.keysAPIService.registration(registrationRequest)
-            when(response.code()) {
-                201 -> {
-                    _registrationResponse.value = response.body()
-                    tokenStore.saveToken(_registrationResponse.value!!.token)
-                    getProfile()
-                }
-                400 -> {
-                    _registrationResponseError.value = true
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    201 -> {
+                        _registrationResponse.value = response.body()
+                        tokenStore.saveToken(_registrationResponse.value!!.token)
+                        getProfile()
+                        getMyKeys()
+                    }
+                    400 -> {
+                        _registrationResponseError.value = true
+                    }
                 }
             }
         }
     }
 
     private fun login(loginRequest: LoginRequest) {
-        getMyKeys()
         CoroutineScope(Dispatchers.IO).launch {
             val response = RetrofitClient.keysAPIService.login(loginRequest)
-            when(response.code()) {
-                200 -> {
-                    _loginResponse.value = response.body()
-                    tokenStore.saveToken(_loginResponse.value!!.token)
-                    getProfile()
-                }
-                400 ->{
-                    _loginResponseError.value = true
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+                        _loginResponse.value = response.body()
+                        tokenStore.saveToken(_loginResponse.value!!.token)
+                        getProfile()
+                        getMyKeys()
+                    }
+                    400 ->{
+                        _loginResponseError.value = true
+                    }
                 }
             }
         }
@@ -240,54 +277,43 @@ class GeneralViewModel(private val tokenStore: TokenStore): ViewModel() {
     private fun changeProfile(changeProfileRequest: ChangeProfileRequest) {
         CoroutineScope(Dispatchers.IO).launch {
             val response = RetrofitClient.keysAPIService.changeProfile(changeProfileRequest, "Bearer ${tokenStore.getToken()}")
-            when(response.code()) {
-                200 -> {
-                    _changeProfileResponse.value = response.body()
-                    getProfile()
-                }
-            }
-        }
-    }
-
-//    fun getAllKeys() {
-//        CoroutineScope(Dispatchers.IO).launch {
-//            val response = RetrofitClient.keysAPIService.getAllKeys("Bearer ${tokenStore.getToken()}", "2024-03-11")
-//            when(response.code()) {
-//                200 -> {
-//                    _getAllKeysResponse.value = response.body()
-//                    withContext(Dispatchers.Main) {
-////                        createSchedule()
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-
-
-    fun getMyKeys() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val response = RetrofitClient.keysAPIService.getMyKeys("Bearer ${tokenStore.getToken()}", 10000)
-            when(response.code()) {
-                200 -> {
-                    if (response.body()!!.keys == null) {
-                        _myKeys.value = emptyList()
-                    } else {
-                        _myKeys.value = response.body()!!.keys!!
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+//                            getProfile()
                     }
                 }
             }
         }
     }
 
-    fun giveKey(keyId: Int, userId: Int) {
+    fun getMyKeys() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val response = RetrofitClient.keysAPIService.getMyKeys("Bearer ${tokenStore.getToken()}", 10000)
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+                        if (response.body()!!.keys == null) {
+                            _myKeys.value = emptyList()
+                        } else {
+                            _myKeys.value = response.body()!!.keys!!
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun giveKey(userId: Int, keyId: Int) {
         CoroutineScope(Dispatchers.IO).launch {
             val response = RetrofitClient.keysAPIService.giveKey("Bearer ${tokenStore.getToken()}", keyId, GiveKeyRequest(userId))
-            when(response.code()) {
-                200 -> {
-                    getMyKeys()
-                    getUsers()
-                    _userForKey.value = _users.value[0]
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+                        getMyKeys()
+                        getUsers()
+                        _userForKey.value = _users.value[0]
+                    }
                 }
             }
         }
@@ -296,11 +322,29 @@ class GeneralViewModel(private val tokenStore: TokenStore): ViewModel() {
     fun getUsers() {
         CoroutineScope(Dispatchers.IO).launch {
             val response = RetrofitClient.keysAPIService.getUsers("Bearer ${tokenStore.getToken()}", 10000)
-            when(response.code()) {
-                200 -> {
-                    _users.value = response.body()!!.users
-                    _userForKey.value = _users.value[0]
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+                        _users.value = response.body()!!.users
+                        _userForKey.value = _users.value[0]
+                    }
                 }
+            }
+        }
+    }
+
+    fun getScheduleBlock() {
+        CoroutineScope(Dispatchers.IO).launch() {
+            val response = RetrofitClient.keysAPIService.getScheduleBlock("Bearer ${tokenStore.getToken()}", _time.value, _date.value)
+            withContext(Dispatchers.Main) {
+                when(response.code()) {
+                    200 -> {
+                        if (response.body()!!.keys != null) {
+                            _scheduleBlock.value = response.body()!!.keys!!
+                        }
+                    }
+                }
+
             }
         }
     }
